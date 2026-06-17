@@ -9,11 +9,11 @@ const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 if (!SERVICE_KEY) { console.error('Missing SUPABASE_SERVICE_KEY env var'); process.exit(1); }
 
 const USERS = [
-  { email: 'admin@birdrock.bank',   password: 'admin123',   name: 'Admin',        role: 'admin',   account_id: null },
-  { email: 'manager@birdrock.bank', password: 'manager123', name: 'Manager',      role: 'manager', account_id: null },
-  { email: 'alice@birdrock.bank',   password: 'alice123',   name: 'Alice Johnson',role: 'user',    account_id: 'acc_alice' },
-  { email: 'bob@birdrock.bank',     password: 'bob123',     name: 'Bob Smith',    role: 'user',    account_id: 'acc_bob' },
-  { email: 'carol@birdrock.bank',   password: 'carol123',   name: 'Carol White',  role: 'user',    account_id: 'acc_carol' },
+  { email: 'admin@birdrock.bank',   password: 'admin123',   name: 'Admin',   role: 'admin',   account_id: null },
+  { email: 'manager@birdrock.bank', password: 'manager123', name: 'Manager', role: 'manager', account_id: null },
+  { email: 'tommy@birdrock.bank',   password: 'tommy123',   name: 'Tommy',   role: 'user',    account_id: 'acc_tommy' },
+  { email: 'gigo@birdrock.bank',    password: 'gigo123',    name: 'Gigo',    role: 'user',    account_id: 'acc_gigo' },
+  { email: 'fedo@birdrock.bank',    password: 'fedo123',    name: 'Fedo',    role: 'user',    account_id: 'acc_fedo' },
 ];
 
 const headers = {

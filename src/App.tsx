@@ -51,7 +51,7 @@ interface Account {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function fmt(n: number) { return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' }); }
+function fmt(n: number) { return 'E£ ' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function today() { return new Date().toISOString().split('T')[0]; }
 function uid()   { return Math.random().toString(36).slice(2, 10); }
 function toAccountId(name: string) { return 'acc_' + name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''); }
@@ -689,7 +689,7 @@ function BalanceChart({ transactions, interestRate }: { transactions: Transactio
             tickFormatter={d => { const dt = new Date(d + 'T00:00:00'); return dt.toLocaleString('en-US', { month: 'short' }) + " '" + String(dt.getFullYear()).slice(2); }}
             interval="preserveStartEnd" />
           <YAxis tick={{ fill: '#475569', fontSize: 11 }} tickLine={false} axisLine={false}
-            domain={[minBal, maxBal]} tickFormatter={v => '$' + (v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v)} width={55} />
+            domain={[minBal, maxBal]} tickFormatter={v => 'E£ ' + (v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v)} width={55} />
           <Tooltip content={<CustomTooltip />} />
           <ReferenceLine x={today} stroke="#e2e8f0" strokeWidth={2} strokeDasharray="4 3"
             label={{ value: 'Today', fill: '#e2e8f0', fontSize: 11, fontWeight: 600, position: 'top' }} />

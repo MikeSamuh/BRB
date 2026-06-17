@@ -13,15 +13,15 @@ const headers = {
 
 // Old email → new email + password
 const UPDATES = [
-  { oldEmail: 'alice@birdrock.bank', newEmail: 'tommy@birdrock.bank', password: 'tommy123' },
-  { oldEmail: 'bob@birdrock.bank',   newEmail: 'gigo@birdrock.bank',  password: 'gigo123'  },
-  { oldEmail: 'carol@birdrock.bank', newEmail: 'fedo@birdrock.bank',  password: 'fedo123'  },
+  { oldEmail: 'alice@birdrock.bank', newEmail: 'tommy@birdrock.bank', password: 'Tommy@BRB2026!' },
+  { oldEmail: 'bob@birdrock.bank',   newEmail: 'gigo@birdrock.bank',  password: 'Gigo@BRB2026!'  },
+  { oldEmail: 'carol@birdrock.bank', newEmail: 'fedo@birdrock.bank',  password: 'Fedo@BRB2026!'  },
 ];
 
 // Also ensure admin/manager passwords are correct
 const PASSWORD_ONLY = [
-  { email: 'admin@birdrock.bank',   password: 'admin123'   },
-  { email: 'manager@birdrock.bank', password: 'manager123' },
+  { email: 'admin@birdrock.bank',   password: 'Admin@BRB2026!' },
+  { email: 'manager@birdrock.bank', password: 'Mgr@BRB2026!'  },
 ];
 
 async function listUsers() {

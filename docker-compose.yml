@@ -1,0 +1,5 @@
+services:
+  brb-bank:
+    build: .
+    ports:
+      - "3000:80"

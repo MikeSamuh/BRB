@@ -71,32 +71,32 @@ function LambSVG({ size }: { size: number }) {
   return (
     <svg width={size} height={size * 0.75} viewBox="0 0 120 90" fill="none" xmlns="http://www.w3.org/2000/svg">
       {/* body */}
-      <ellipse cx="60" cy="52" rx="32" ry="22" fill="#9ca3af" />
+      <ellipse cx="60" cy="52" rx="32" ry="22" fill="#e2e8f0" />
       {/* head */}
-      <ellipse cx="88" cy="38" rx="14" ry="12" fill="#9ca3af" />
+      <ellipse cx="88" cy="38" rx="14" ry="12" fill="#e2e8f0" />
       {/* ear */}
-      <ellipse cx="95" cy="30" rx="5" ry="7" fill="#9ca3af" transform="rotate(-20 95 30)" />
+      <ellipse cx="95" cy="30" rx="5" ry="7" fill="#cbd5e1" transform="rotate(-20 95 30)" />
       {/* eye */}
-      <circle cx="92" cy="37" r="2.5" fill="#374151" />
+      <circle cx="92" cy="37" r="2.5" fill="#1e293b" />
       {/* nose */}
-      <ellipse cx="98" cy="42" rx="3" ry="2" fill="#6b7280" />
+      <ellipse cx="98" cy="42" rx="3" ry="2" fill="#94a3b8" />
       {/* front left leg */}
-      <rect x="42" y="68" width="8" height="18" rx="4" fill="#9ca3af" />
+      <rect x="42" y="68" width="8" height="18" rx="4" fill="#cbd5e1" />
       {/* front right leg */}
-      <rect x="54" y="68" width="8" height="18" rx="4" fill="#9ca3af" />
+      <rect x="54" y="68" width="8" height="18" rx="4" fill="#cbd5e1" />
       {/* back left leg */}
-      <rect x="66" y="68" width="8" height="18" rx="4" fill="#9ca3af" />
+      <rect x="66" y="68" width="8" height="18" rx="4" fill="#cbd5e1" />
       {/* back right leg */}
-      <rect x="78" y="68" width="8" height="18" rx="4" fill="#9ca3af" />
+      <rect x="78" y="68" width="8" height="18" rx="4" fill="#cbd5e1" />
       {/* tail */}
-      <ellipse cx="29" cy="50" rx="7" ry="6" fill="#9ca3af" />
+      <ellipse cx="29" cy="50" rx="7" ry="6" fill="#e2e8f0" />
       {/* wool texture dots */}
-      <circle cx="50" cy="46" r="5" fill="#d1d5db" />
-      <circle cx="62" cy="42" r="6" fill="#d1d5db" />
-      <circle cx="74" cy="45" r="5" fill="#d1d5db" />
-      <circle cx="56" cy="55" r="5" fill="#d1d5db" />
-      <circle cx="68" cy="57" r="4" fill="#d1d5db" />
-      <circle cx="44" cy="53" r="4" fill="#d1d5db" />
+      <circle cx="50" cy="46" r="5" fill="#f8fafc" />
+      <circle cx="62" cy="42" r="6" fill="#f8fafc" />
+      <circle cx="74" cy="45" r="5" fill="#f8fafc" />
+      <circle cx="56" cy="55" r="5" fill="#f8fafc" />
+      <circle cx="68" cy="57" r="4" fill="#f8fafc" />
+      <circle cx="44" cy="53" r="4" fill="#f8fafc" />
     </svg>
   );
 }

@@ -658,7 +658,7 @@ function BalanceChart({ transactions, interestRate }: { transactions: Transactio
     const isProjected = d.type === 'projected';
     return (
       <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, padding: '10px 14px', fontSize: 13 }}>
-        <div style={{ color: '#94a3b8', marginBottom: 4 }}>{d.date}{isProjected ? ' (projected)' : ''}</div>
+        <div style={{ color: '#94a3b8', marginBottom: 4 }}>{(() => { const dt = new Date(d.date + 'T00:00:00'); return dt.toLocaleString('en-US', { month: 'long', year: 'numeric', day: 'numeric' }); })()}{isProjected ? ' (projected)' : ''}</div>
         <div style={{ color: isProjected ? '#fbbf24' : '#34d399', fontWeight: 700, fontSize: 16 }}>{fmt(d.balance)}</div>
         {d.type && !isProjected && (
           <div style={{ color: '#475569', fontSize: 11, marginTop: 2, textTransform: 'capitalize' }}>{d.type}</div>
@@ -686,11 +686,13 @@ function BalanceChart({ transactions, interestRate }: { transactions: Transactio
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
           <XAxis dataKey="date" tick={{ fill: '#475569', fontSize: 11 }} tickLine={false} axisLine={false}
-            tickFormatter={d => d.slice(5)} interval="preserveStartEnd" />
+            tickFormatter={d => { const dt = new Date(d + 'T00:00:00'); return dt.toLocaleString('en-US', { month: 'short' }) + " '" + String(dt.getFullYear()).slice(2); }}
+            interval="preserveStartEnd" />
           <YAxis tick={{ fill: '#475569', fontSize: 11 }} tickLine={false} axisLine={false}
             domain={[minBal, maxBal]} tickFormatter={v => '$' + (v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v)} width={55} />
           <Tooltip content={<CustomTooltip />} />
-          <ReferenceLine x={today} stroke="#475569" strokeDasharray="4 2" label={{ value: 'Today', fill: '#475569', fontSize: 10 }} />
+          <ReferenceLine x={today} stroke="#e2e8f0" strokeWidth={2} strokeDasharray="4 3"
+            label={{ value: 'Today', fill: '#e2e8f0', fontSize: 11, fontWeight: 600, position: 'top' }} />
           <Area type="monotone" dataKey="balance" stroke={ORANGE} strokeWidth={2}
             fill="url(#balGrad)"
             dot={(props) => {

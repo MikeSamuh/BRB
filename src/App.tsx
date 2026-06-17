@@ -30,6 +30,7 @@ interface Profile {
   email: string;
   role: Role;
   account_id?: string;
+  manager_id?: string;
 }
 
 interface Transaction {
@@ -317,6 +318,7 @@ function AccountModal({ account, role, onClose, onTransaction }: {
 
 // ── User Management ───────────────────────────────────────────────────────────
 function UserManagement({ profiles, onRefresh }: { profiles: Profile[]; onRefresh: () => void }) {
+  const managers = profiles.filter(p => p.role === 'manager');
   const [showForm, setShowForm] = useState(false);
   const [name, setName]         = useState('');
   const [email, setEmail]       = useState('');
@@ -356,6 +358,11 @@ function UserManagement({ profiles, onRefresh }: { profiles: Profile[]; onRefres
 
     setName(''); setEmail(''); setPassword(''); setRole('user');
     setShowForm(false); setSaving(false);
+    onRefresh();
+  }
+
+  async function handleAssignManager(userId: string, managerId: string) {
+    await supabase.from('profiles').update({ manager_id: managerId || null }).eq('id', userId);
     onRefresh();
   }
 
@@ -445,7 +452,16 @@ function UserManagement({ profiles, onRefresh }: { profiles: Profile[]; onRefres
               <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: roleColor(p.role), color: 'white', fontWeight: 600 }}>
                 {p.role}
               </span>
-              {p.account_id && <span style={{ fontSize: 11, color: '#64748b' }}>{p.account_id}</span>}
+              {p.role === 'user' && (
+                <select
+                  value={p.manager_id ?? ''}
+                  onChange={e => handleAssignManager(p.id, e.target.value)}
+                  style={{ fontSize: 11, background: '#0f172a', color: '#94a3b8', border: '1px solid #334155', borderRadius: 6, padding: '3px 6px', cursor: 'pointer' }}
+                >
+                  <option value="">No manager</option>
+                  {managers.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
+              )}
               {confirmDelete === p.id ? (
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button onClick={() => handleDeleteUser(p)}
@@ -852,7 +868,16 @@ export default function App() {
     if (budget) setMonthlyBudget(parseFloat(budget.value));
 
     if (accsRaw && txsRaw) {
-      setAccounts(accsRaw.map(a => ({ ...a, transactions: txsRaw.filter(t => t.account_id === a.id) })));
+      let visibleAccounts = accsRaw;
+      if (effectiveRole === 'manager') {
+        const { data: assignedProfiles } = await supabase
+          .from('profiles')
+          .select('account_id')
+          .eq('manager_id', (await supabase.auth.getUser()).data.user?.id ?? '');
+        const assignedIds = new Set((assignedProfiles ?? []).map(p => p.account_id).filter(Boolean));
+        visibleAccounts = accsRaw.filter(a => assignedIds.has(a.id));
+      }
+      setAccounts(visibleAccounts.map(a => ({ ...a, transactions: txsRaw.filter(t => t.account_id === a.id) })));
     }
 
     if (effectiveRole === 'admin') {

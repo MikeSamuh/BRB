@@ -67,9 +67,44 @@ const primaryBtn: React.CSSProperties = {
 };
 
 // ── Logo / Wordmark ───────────────────────────────────────────────────────────
+function LambSVG({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size * 0.75} viewBox="0 0 120 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* body */}
+      <ellipse cx="60" cy="52" rx="32" ry="22" fill="#9ca3af" />
+      {/* head */}
+      <ellipse cx="88" cy="38" rx="14" ry="12" fill="#9ca3af" />
+      {/* ear */}
+      <ellipse cx="95" cy="30" rx="5" ry="7" fill="#9ca3af" transform="rotate(-20 95 30)" />
+      {/* eye */}
+      <circle cx="92" cy="37" r="2.5" fill="#374151" />
+      {/* nose */}
+      <ellipse cx="98" cy="42" rx="3" ry="2" fill="#6b7280" />
+      {/* front left leg */}
+      <rect x="42" y="68" width="8" height="18" rx="4" fill="#9ca3af" />
+      {/* front right leg */}
+      <rect x="54" y="68" width="8" height="18" rx="4" fill="#9ca3af" />
+      {/* back left leg */}
+      <rect x="66" y="68" width="8" height="18" rx="4" fill="#9ca3af" />
+      {/* back right leg */}
+      <rect x="78" y="68" width="8" height="18" rx="4" fill="#9ca3af" />
+      {/* tail */}
+      <ellipse cx="29" cy="50" rx="7" ry="6" fill="#9ca3af" />
+      {/* wool texture dots */}
+      <circle cx="50" cy="46" r="5" fill="#d1d5db" />
+      <circle cx="62" cy="42" r="6" fill="#d1d5db" />
+      <circle cx="74" cy="45" r="5" fill="#d1d5db" />
+      <circle cx="56" cy="55" r="5" fill="#d1d5db" />
+      <circle cx="68" cy="57" r="4" fill="#d1d5db" />
+      <circle cx="44" cy="53" r="4" fill="#d1d5db" />
+    </svg>
+  );
+}
+
 function BRBWordmark({ large }: { large?: boolean }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      {large && <LambSVG size={90} />}
       <span style={{ fontWeight: 900, fontSize: large ? 48 : 20, color: ORANGE, letterSpacing: -1, lineHeight: 1 }}>BRB</span>
       <span style={{ fontSize: large ? 13 : 10, color: '#94a3b8', fontWeight: 500, letterSpacing: 1 }}>BIRD ROCK BANK</span>
     </div>
@@ -99,7 +134,6 @@ function Login({ onLogin }: { onLogin: (u: AppUser) => void }) {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f172a' }}>
       <div style={{ width: 400, padding: '2.5rem', background: '#1e293b', borderRadius: 16, boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <img src="/logo.png" alt="BRB" style={{ height: 80, marginBottom: 8 }} onError={e => (e.target as HTMLImageElement).style.display = 'none'} />
           <BRBWordmark large />
         </div>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

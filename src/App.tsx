@@ -67,46 +67,22 @@ const primaryBtn: React.CSSProperties = {
 };
 
 // ── Logo / Wordmark ───────────────────────────────────────────────────────────
-function LambSVG({ size }: { size: number }) {
-  return (
-    <svg width={size} height={size * 0.75} viewBox="0 0 120 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* body */}
-      <ellipse cx="60" cy="52" rx="32" ry="22" fill="#e2e8f0" />
-      {/* head */}
-      <ellipse cx="88" cy="38" rx="14" ry="12" fill="#e2e8f0" />
-      {/* ear */}
-      <ellipse cx="95" cy="30" rx="5" ry="7" fill="#cbd5e1" transform="rotate(-20 95 30)" />
-      {/* eye */}
-      <circle cx="92" cy="37" r="2.5" fill="#1e293b" />
-      {/* nose */}
-      <ellipse cx="98" cy="42" rx="3" ry="2" fill="#94a3b8" />
-      {/* front left leg */}
-      <rect x="42" y="68" width="8" height="18" rx="4" fill="#cbd5e1" />
-      {/* front right leg */}
-      <rect x="54" y="68" width="8" height="18" rx="4" fill="#cbd5e1" />
-      {/* back left leg */}
-      <rect x="66" y="68" width="8" height="18" rx="4" fill="#cbd5e1" />
-      {/* back right leg */}
-      <rect x="78" y="68" width="8" height="18" rx="4" fill="#cbd5e1" />
-      {/* tail */}
-      <ellipse cx="29" cy="50" rx="7" ry="6" fill="#e2e8f0" />
-      {/* wool texture dots */}
-      <circle cx="50" cy="46" r="5" fill="#f8fafc" />
-      <circle cx="62" cy="42" r="6" fill="#f8fafc" />
-      <circle cx="74" cy="45" r="5" fill="#f8fafc" />
-      <circle cx="56" cy="55" r="5" fill="#f8fafc" />
-      <circle cx="68" cy="57" r="4" fill="#f8fafc" />
-      <circle cx="44" cy="53" r="4" fill="#f8fafc" />
-    </svg>
-  );
-}
-
 function BRBWordmark({ large }: { large?: boolean }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      {large && <LambSVG size={90} />}
-      <span style={{ fontWeight: 900, fontSize: large ? 48 : 20, color: ORANGE, letterSpacing: -1, lineHeight: 1 }}>BRB</span>
-      <span style={{ fontSize: large ? 13 : 10, color: '#94a3b8', fontWeight: 500, letterSpacing: 1 }}>BIRD ROCK BANK</span>
+      {large && (
+        <img
+          src="/logo.png"
+          alt="Bird Rock Bank"
+          style={{ height: 140, marginBottom: 4, objectFit: 'contain' }}
+        />
+      )}
+      {!large && (
+        <>
+          <span style={{ fontWeight: 900, fontSize: 20, color: ORANGE, letterSpacing: -1, lineHeight: 1 }}>BRB</span>
+          <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 500, letterSpacing: 1 }}>BIRD ROCK BANK</span>
+        </>
+      )}
     </div>
   );
 }

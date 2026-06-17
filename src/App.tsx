@@ -51,6 +51,17 @@ interface Account {
   transactions: Transaction[];
 }
 
+// ── Responsive hook ───────────────────────────────────────────────────────────
+function useWindowWidth() {
+  const [width, setWidth] = useState(() => window.innerWidth);
+  useEffect(() => {
+    const handler = () => setWidth(window.innerWidth);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return width;
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function fmt(n: number) { return '£' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function today() { return new Date().toISOString().split('T')[0]; }
@@ -65,6 +76,7 @@ const inputStyle: React.CSSProperties = {
 const primaryBtn: React.CSSProperties = {
   background: ORANGE, color: 'white', border: 'none', borderRadius: 8,
   padding: '10px 20px', fontWeight: 600, fontSize: 14, cursor: 'pointer', width: '100%',
+  minHeight: 44,
 };
 
 // ── Logo / Wordmark ───────────────────────────────────────────────────────────
@@ -95,6 +107,8 @@ function Login({ onLogin }: { onLogin: (u: AppUser) => void }) {
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
   const [showPw, setShowPw]     = useState(false);
+  const width = useWindowWidth();
+  const isMobile = width < 640;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -108,8 +122,8 @@ function Login({ onLogin }: { onLogin: (u: AppUser) => void }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f172a' }}>
-      <div style={{ width: 400, padding: '2.5rem', background: '#1e293b', borderRadius: 16, boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f172a', padding: '1rem' }}>
+      <div style={{ width: '100%', maxWidth: 400, padding: isMobile ? '1.5rem' : '2.5rem', background: '#1e293b', borderRadius: 16, boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <BRBWordmark large />
         </div>
@@ -144,17 +158,19 @@ function Login({ onLogin }: { onLogin: (u: AppUser) => void }) {
 
 // ── Header ────────────────────────────────────────────────────────────────────
 function Header({ user, onLogout }: { user: AppUser; onLogout: () => void }) {
+  const width = useWindowWidth();
+  const isMobile = width < 640;
   const badge = user.role === 'admin' ? { bg: '#7c3aed', text: 'Admin' }
     : user.role === 'manager' ? { bg: '#0891b2', text: 'Manager' }
     : { bg: '#059669', text: 'Member' };
   return (
-    <header style={{ background: '#1e293b', borderBottom: `2px solid ${ORANGE}`, padding: '0 2rem', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
+    <header style={{ background: '#1e293b', borderBottom: `2px solid ${ORANGE}`, padding: isMobile ? '0 1rem' : '0 2rem', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, flexWrap: 'wrap', gap: 8 }}>
       <BRBWordmark />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span style={{ fontSize: 14, color: '#cbd5e1' }}>{user.name}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12, flexWrap: 'wrap' }}>
+        {!isMobile && <span style={{ fontSize: 14, color: '#cbd5e1' }}>{user.name}</span>}
         <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: badge.bg, color: 'white', fontWeight: 600 }}>{badge.text}</span>
-        <button onClick={onLogout} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #334155', color: '#94a3b8', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 13 }}>
-          <LogOut size={14} /> Sign out
+        <button onClick={onLogout} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #334155', color: '#94a3b8', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 13, minHeight: 44 }}>
+          <LogOut size={14} />{!isMobile && ' Sign out'}
         </button>
       </div>
     </header>
@@ -168,14 +184,33 @@ function StatCard({ icon, label, value, color, small }: { icon: React.ReactNode;
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, color }}>
         {icon}<span style={{ fontSize: 12, color: '#64748b', fontWeight: 500 }}>{label}</span>
       </div>
-      <div style={{ fontSize: small ? 20 : 26, fontWeight: 700, color }}>{value}</div>
+      <div style={{ fontSize: small ? 20 : 24, fontWeight: 700, color }}>{value}</div>
     </div>
   );
 }
 
 // ── Transaction Row ───────────────────────────────────────────────────────────
-function TxRow({ tx }: { tx: Transaction }) {
+function TxRow({ tx, isMobile }: { tx: Transaction; isMobile?: boolean }) {
   const isIn = tx.type !== 'withdrawal';
+  if (isMobile) {
+    return (
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid #1e293b', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 13, color: '#e2e8f0' }}>{tx.note}</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: isIn ? '#34d399' : '#f87171' }}>
+            {isIn ? '+' : '-'}{fmt(tx.amount)}
+          </span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 12, color: '#475569' }}>
+            {tx.type === 'interest' ? '🔄 Interest' : tx.type === 'deposit' ? '⬆ Deposit' : '⬇ Withdrawal'}
+            {' · '}{tx.date}
+          </span>
+          <span style={{ fontSize: 12, color: '#94a3b8' }}>{fmt(tx.balance)}</span>
+        </div>
+      </div>
+    );
+  }
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr auto auto', gap: 12, alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #1e293b' }}>
       <span style={{ fontSize: 13, color: '#64748b' }}>{tx.date}</span>
@@ -196,10 +231,12 @@ function TxRow({ tx }: { tx: Transaction }) {
 
 // ── Account Card ──────────────────────────────────────────────────────────────
 function AccountCard({ account, onManage }: { account: Account; onManage: () => void }) {
+  const width = useWindowWidth();
+  const isMobile = width < 640;
   const last = account.transactions[account.transactions.length - 1];
   return (
-    <div style={{ background: '#1e293b', borderRadius: 12, padding: '1.25rem 1.5rem', border: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+    <div style={{ background: '#1e293b', borderRadius: 12, padding: '1.25rem', border: '1px solid #334155', display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 12, flexDirection: isMobile ? 'column' : 'row' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1 }}>
         <div style={{ width: 44, height: 44, borderRadius: '50%', background: `linear-gradient(135deg,${ORANGE},${ORANGE_DARK})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, color: 'white', flexShrink: 0 }}>
           {account.owner_name[0]}
         </div>
@@ -208,12 +245,12 @@ function AccountCard({ account, onManage }: { account: Account; onManage: () => 
           <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>Last activity: {last?.date ?? '—'}</div>
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-        <div style={{ textAlign: 'right' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, width: isMobile ? '100%' : 'auto' }}>
+        <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
           <div style={{ fontSize: 22, fontWeight: 700, color: '#34d399' }}>{fmt(account.balance)}</div>
           <div style={{ fontSize: 12, color: '#64748b' }}>{account.transactions.length} transactions</div>
         </div>
-        <button onClick={onManage} style={{ ...primaryBtn, padding: '8px 14px', fontSize: 13, width: 'auto' }}>View</button>
+        <button onClick={onManage} style={{ ...primaryBtn, padding: '8px 14px', fontSize: 13, width: 'auto', minWidth: 80 }}>View</button>
       </div>
     </div>
   );
@@ -230,6 +267,8 @@ function AccountModal({ account, role, onClose, onTransaction }: {
   const [err, setErr]         = useState('');
   const [saving, setSaving]   = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const width = useWindowWidth();
+  const isMobile = width < 640;
 
   const txs = showAll ? [...account.transactions].reverse() : [...account.transactions].reverse().slice(0, 5);
 
@@ -245,43 +284,43 @@ function AccountModal({ account, role, onClose, onTransaction }: {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? 8 : 16 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={{ background: '#1e293b', borderRadius: 16, width: '100%', maxWidth: 560, maxHeight: '90vh', overflow: 'auto', boxShadow: '0 25px 50px rgba(0,0,0,0.6)' }}>
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: isMobile ? '1rem' : '1.5rem', borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: '50%', background: `linear-gradient(135deg,${ORANGE},${ORANGE_DARK})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, color: 'white' }}>
+            <div style={{ width: 44, height: 44, borderRadius: '50%', background: `linear-gradient(135deg,${ORANGE},${ORANGE_DARK})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, color: 'white', flexShrink: 0 }}>
               {account.owner_name[0]}
             </div>
             <div>
               <div style={{ fontWeight: 700, fontSize: 17, color: '#f1f5f9' }}>{account.owner_name}</div>
-              <div style={{ fontSize: 12, color: '#64748b' }}>Account: {account.id}</div>
+              <div style={{ fontSize: 12, color: '#64748b', wordBreak: 'break-all' }}>Account: {account.id}</div>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 22, lineHeight: 1, padding: 4 }}>×</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 22, lineHeight: 1, padding: 4, minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
         </div>
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid #334155', textAlign: 'center' }}>
+        <div style={{ padding: isMobile ? '1rem' : '1.5rem', borderBottom: '1px solid #334155', textAlign: 'center' }}>
           <div style={{ fontSize: 13, color: '#64748b', marginBottom: 4 }}>Current Balance</div>
-          <div style={{ fontSize: 36, fontWeight: 800, color: '#34d399' }}>{fmt(account.balance)}</div>
+          <div style={{ fontSize: isMobile ? 28 : 36, fontWeight: 800, color: '#34d399' }}>{fmt(account.balance)}</div>
         </div>
         {(role === 'manager' || role === 'admin') && onTransaction && (
-          <form onSubmit={handleSubmit} style={{ padding: '1.5rem', borderBottom: '1px solid #334155' }}>
+          <form onSubmit={handleSubmit} style={{ padding: isMobile ? '1rem' : '1.5rem', borderBottom: '1px solid #334155' }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: '#94a3b8', marginBottom: 12 }}>Add Transaction</div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
               <button type="button" onClick={() => setType('deposit')}
-                style={{ flex: 1, padding: '8px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, background: type === 'deposit' ? '#059669' : '#334155', color: type === 'deposit' ? 'white' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                style={{ flex: 1, padding: '10px 8px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, background: type === 'deposit' ? '#059669' : '#334155', color: type === 'deposit' ? 'white' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 44 }}>
                 <Plus size={14} />Deposit
               </button>
               <button type="button" onClick={() => setType('withdrawal')}
-                style={{ flex: 1, padding: '8px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, background: type === 'withdrawal' ? '#dc2626' : '#334155', color: type === 'withdrawal' ? 'white' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                style={{ flex: 1, padding: '10px 8px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, background: type === 'withdrawal' ? '#dc2626' : '#334155', color: type === 'withdrawal' ? 'white' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 44 }}>
                 <Minus size={14} />Withdrawal
               </button>
             </div>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 8, marginBottom: 8 }}>
               <input value={amount} onChange={e => { setAmount(e.target.value); setErr(''); }}
                 placeholder="Amount ($)" type="number" min="0.01" step="0.01" style={{ ...inputStyle, flex: 1 }} />
               <input value={note} onChange={e => { setNote(e.target.value); setErr(''); }}
-                placeholder="Note / description" style={{ ...inputStyle, flex: 2 }} />
+                placeholder="Note / description" style={{ ...inputStyle, flex: isMobile ? 'unset' : 2 }} />
             </div>
             {err && <p style={{ color: '#f87171', fontSize: 13, marginBottom: 8 }}>{err}</p>}
             <button type="submit" disabled={saving} style={{ ...primaryBtn, opacity: saving ? 0.7 : 1 }}>
@@ -295,14 +334,16 @@ function AccountModal({ account, role, onClose, onTransaction }: {
             ? <p style={{ padding: '1rem 1.5rem', color: '#475569', fontSize: 14 }}>No transactions yet.</p>
             : (
               <>
-                <div style={{ padding: '8px 16px', display: 'grid', gridTemplateColumns: '110px 1fr auto auto', gap: 12, fontSize: 11, color: '#475569', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>
-                  <span>Date</span><span>Description</span><span>Amount</span><span>Balance</span>
-                </div>
-                {txs.map(tx => <TxRow key={tx.id} tx={tx} />)}
+                {!isMobile && (
+                  <div style={{ padding: '8px 16px', display: 'grid', gridTemplateColumns: '110px 1fr auto auto', gap: 12, fontSize: 11, color: '#475569', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>
+                    <span>Date</span><span>Description</span><span>Amount</span><span>Balance</span>
+                  </div>
+                )}
+                {txs.map(tx => <TxRow key={tx.id} tx={tx} isMobile={isMobile} />)}
                 {account.transactions.length > 5 && (
                   <div style={{ padding: '12px', textAlign: 'center' }}>
                     <button onClick={() => setShowAll(!showAll)}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: ORANGE, cursor: 'pointer', fontSize: 13 }}>
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: ORANGE, cursor: 'pointer', fontSize: 13, minHeight: 44 }}>
                       {showAll ? <><ChevronUp size={14} />Show less</> : <><ChevronDown size={14} />Show all {account.transactions.length}</>}
                     </button>
                   </div>
@@ -327,6 +368,8 @@ function UserManagement({ profiles, onRefresh }: { profiles: Profile[]; onRefres
   const [err, setErr]           = useState('');
   const [saving, setSaving]     = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const width = useWindowWidth();
+  const isMobile = width < 640;
 
   const roleColor = (r: Role) => r === 'admin' ? '#7c3aed' : r === 'manager' ? '#0891b2' : '#059669';
 
@@ -392,10 +435,10 @@ function UserManagement({ profiles, onRefresh }: { profiles: Profile[]; onRefres
 
       {/* Add user form */}
       {showForm && (
-        <div style={{ background: '#0f172a', borderRadius: 12, padding: '1.5rem', marginBottom: 16, border: '1px solid #334155' }}>
+        <div style={{ background: '#0f172a', borderRadius: 12, padding: isMobile ? '1rem' : '1.5rem', marginBottom: 16, border: '1px solid #334155' }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: '#f1f5f9', marginBottom: 16 }}>New User</div>
           <form onSubmit={handleAddUser} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>Full Name</label>
                 <input value={name} onChange={e => setName(e.target.value)} placeholder="Jane Smith" style={inputStyle} />
@@ -422,12 +465,12 @@ function UserManagement({ profiles, onRefresh }: { profiles: Profile[]; onRefres
             {role === 'user' && name && (
               <p style={{ fontSize: 12, color: '#64748b' }}>Account ID will be: <code style={{ color: '#94a3b8' }}>{toAccountId(name)}</code></p>
             )}
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 8 }}>
               <button type="submit" disabled={saving} style={{ ...primaryBtn, opacity: saving ? 0.7 : 1, flex: 1 }}>
                 {saving ? 'Creating…' : 'Create User'}
               </button>
               <button type="button" onClick={() => { setShowForm(false); setErr(''); }}
-                style={{ flex: 1, background: '#334155', color: '#94a3b8', border: 'none', borderRadius: 8, padding: '10px', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+                style={{ flex: 1, background: '#334155', color: '#94a3b8', border: 'none', borderRadius: 8, padding: '10px', fontWeight: 600, fontSize: 14, cursor: 'pointer', minHeight: 44 }}>
                 Cancel
               </button>
             </div>
@@ -438,7 +481,7 @@ function UserManagement({ profiles, onRefresh }: { profiles: Profile[]; onRefres
       {/* User list */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {profiles.map(p => (
-          <div key={p.id} style={{ background: '#1e293b', borderRadius: 10, padding: '1rem 1.25rem', border: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div key={p.id} style={{ background: '#1e293b', borderRadius: 10, padding: '1rem 1.25rem', border: '1px solid #334155', display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 12, flexDirection: isMobile ? 'column' : 'row' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 38, height: 38, borderRadius: '50%', background: `linear-gradient(135deg,${ORANGE},${ORANGE_DARK})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, color: 'white', flexShrink: 0 }}>
                 {p.name[0]}
@@ -448,7 +491,7 @@ function UserManagement({ profiles, onRefresh }: { profiles: Profile[]; onRefres
                 <div style={{ fontSize: 12, color: '#64748b' }}>{p.email}</div>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: roleColor(p.role), color: 'white', fontWeight: 600 }}>
                 {p.role}
               </span>
@@ -465,17 +508,17 @@ function UserManagement({ profiles, onRefresh }: { profiles: Profile[]; onRefres
               {confirmDelete === p.id ? (
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button onClick={() => handleDeleteUser(p)}
-                    style={{ background: '#dc2626', color: 'white', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+                    style={{ background: '#dc2626', color: 'white', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', fontWeight: 600, minHeight: 44 }}>
                     Confirm
                   </button>
                   <button onClick={() => setConfirmDelete(null)}
-                    style={{ background: '#334155', color: '#94a3b8', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}>
+                    style={{ background: '#334155', color: '#94a3b8', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', minHeight: 44 }}>
                     Cancel
                   </button>
                 </div>
               ) : (
                 <button onClick={() => setConfirmDelete(p.id)}
-                  style={{ background: 'none', border: '1px solid #334155', color: '#64748b', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}>
+                  style={{ background: 'none', border: '1px solid #334155', color: '#64748b', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, minHeight: 44 }}>
                   <Trash2 size={12} /> Remove
                 </button>
               )}
@@ -502,6 +545,8 @@ function AdminDashboard({ accounts, profiles, interestRate, user, onRefresh }: {
   const [rateInput, setRateInput] = useState(String(interestRate));
   const [rateSaved, setRateSaved] = useState(false);
   const [localAccounts, setLocalAccounts] = useState(accounts);
+  const width = useWindowWidth();
+  const isMobile = width < 640;
 
   useEffect(() => { setLocalAccounts(accounts); }, [accounts]);
 
@@ -530,30 +575,30 @@ function AdminDashboard({ accounts, profiles, interestRate, user, onRefresh }: {
 
   const tabStyle = (t: AdminTab): React.CSSProperties => ({
     padding: '8px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 14,
-    background: tab === t ? ORANGE : '#1e293b', color: tab === t ? 'white' : '#94a3b8',
+    background: tab === t ? ORANGE : '#1e293b', color: tab === t ? 'white' : '#94a3b8', minHeight: 44,
   });
 
   return (
-    <div style={{ padding: '2rem', maxWidth: 900, margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+    <div style={{ padding: isMobile ? '1rem' : '2rem', maxWidth: 900, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 8 }}>
         <div style={{ display: 'flex', gap: 8 }}>
           <button style={tabStyle('accounts')} onClick={() => setTab('accounts')}>Accounts</button>
           <button style={tabStyle('users')} onClick={() => setTab('users')}>Users</button>
         </div>
-        <button onClick={onRefresh} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #334155', color: '#94a3b8', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 13 }}>
+        <button onClick={onRefresh} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #334155', color: '#94a3b8', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 13, minHeight: 44 }}>
           <RefreshCw size={14} /> Refresh
         </button>
       </div>
 
       {tab === 'accounts' && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: '2rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: 12, marginBottom: '1.5rem' }}>
             <StatCard icon={<Banknote size={20} />} label="Total Balance"       value={fmt(totalBalance)}           color="#34d399" />
             <StatCard icon={<Users size={20} />}       label="Members"            value={String(localAccounts.length)} color="#60a5fa" />
             <StatCard icon={<TrendingUp size={20} />}  label="Total Transactions" value={String(totalTxs)}            color={ORANGE}  />
           </div>
 
-          <div style={{ background: '#1e293b', borderRadius: 12, padding: '1.25rem 1.5rem', border: '1px solid #334155', marginBottom: '2rem' }}>
+          <div style={{ background: '#1e293b', borderRadius: 12, padding: '1.25rem', border: '1px solid #334155', marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <Percent size={16} color="#fbbf24" />
               <span style={{ fontWeight: 600, fontSize: 15, color: '#f1f5f9' }}>Annual Interest Rate</span>
@@ -595,6 +640,8 @@ function ManagerDashboard({ accounts, interestRate, monthlyBudget, user, onRefre
 }) {
   const [selected, setSelected] = useState<Account | null>(null);
   const [localAccounts, setLocalAccounts] = useState(accounts);
+  const width = useWindowWidth();
+  const isMobile = width < 640;
 
   useEffect(() => { setLocalAccounts(accounts); }, [accounts]);
 
@@ -625,19 +672,19 @@ function ManagerDashboard({ accounts, interestRate, monthlyBudget, user, onRefre
   const budgetColor = budgetPct > 90 ? '#f87171' : budgetPct > 70 ? '#fbbf24' : '#34d399';
 
   return (
-    <div style={{ padding: '2rem', maxWidth: 900, margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div style={{ padding: isMobile ? '1rem' : '2rem', maxWidth: 900, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 8 }}>
+        <h2 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Banknote size={20} /> Manage Accounts
         </h2>
-        <button onClick={onRefresh} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #334155', color: '#94a3b8', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 13 }}>
+        <button onClick={onRefresh} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #334155', color: '#94a3b8', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 13, minHeight: 44 }}>
           <RefreshCw size={14} /> Refresh
         </button>
       </div>
 
       {/* Monthly budget tracker */}
       <div style={{ background: '#1e293b', borderRadius: 12, padding: '1rem 1.25rem', border: '1px solid #334155', marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: 8, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 4 : 0 }}>
           <span style={{ fontSize: 13, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Banknote size={14} color={budgetColor} /> Monthly Budget
           </span>
@@ -767,6 +814,8 @@ function BalanceChart({ transactions, interestRate }: { transactions: Transactio
 function UserDashboard({ accounts, interestRate, user }: { accounts: Account[]; interestRate: number; user: AppUser }) {
   const account = accounts.find(a => a.id === user.accountId);
   const [showAll, setShowAll] = useState(false);
+  const width = useWindowWidth();
+  const isMobile = width < 640;
 
   if (!account) return <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>No account found.</div>;
 
@@ -777,31 +826,31 @@ function UserDashboard({ accounts, interestRate, user }: { accounts: Account[]; 
   const totalWithdrawn  = account.transactions.filter(t => t.type === 'withdrawal').reduce((s, t) => s + t.amount, 0);
 
   return (
-    <div style={{ padding: '2rem', maxWidth: 700, margin: '0 auto' }}>
-      <div style={{ background: `linear-gradient(135deg,${ORANGE_DARK},#7c2d12)`, borderRadius: 16, padding: '2rem', marginBottom: '1.5rem', border: '1px solid #334155', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ padding: isMobile ? '1rem' : '2rem', maxWidth: 700, margin: '0 auto' }}>
+      <div style={{ background: `linear-gradient(135deg,${ORANGE_DARK},#7c2d12)`, borderRadius: 16, padding: isMobile ? '1.25rem' : '2rem', marginBottom: '1.5rem', border: '1px solid #334155', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', right: -20, top: -20, width: 120, height: 120, background: 'rgba(255,255,255,0.06)', borderRadius: '50%' }} />
         <div style={{ position: 'absolute', right: 20, bottom: -40, width: 160, height: 160, background: 'rgba(255,255,255,0.04)', borderRadius: '50%' }} />
         <div style={{ fontSize: 13, color: '#fcd9c8', marginBottom: 4 }}>Total Savings Balance</div>
-        <div style={{ fontSize: 44, fontWeight: 800, color: '#fff', letterSpacing: -1 }}>{fmt(account.balance)}</div>
-        <div style={{ marginTop: 16, display: 'flex', gap: 24 }}>
+        <div style={{ fontSize: isMobile ? 32 : 44, fontWeight: 800, color: '#fff', letterSpacing: -1 }}>{fmt(account.balance)}</div>
+        <div style={{ marginTop: 16, display: 'flex', gap: isMobile ? 16 : 24, flexWrap: 'wrap' }}>
           <div>
             <div style={{ fontSize: 12, color: '#fcd9c8' }}>Interest Rate</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#fbbf24' }}>{interestRate}% APR</div>
+            <div style={{ fontSize: isMobile ? 15 : 18, fontWeight: 700, color: '#fbbf24' }}>{interestRate}% APR</div>
           </div>
           <div>
             <div style={{ fontSize: 12, color: '#fcd9c8' }}>Est. Monthly Earnings</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#86efac' }}>{fmt(monthlyInterest)}</div>
+            <div style={{ fontSize: isMobile ? 15 : 18, fontWeight: 700, color: '#86efac' }}>{fmt(monthlyInterest)}</div>
           </div>
         </div>
       </div>
       <BalanceChart transactions={account.transactions} interestRate={interestRate} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: '1.5rem' }}>
         <StatCard icon={<ArrowUpCircle size={18} />}   label="Total Deposited" value={fmt(totalDeposited)} color="#34d399" small />
         <StatCard icon={<ArrowDownCircle size={18} />} label="Total Withdrawn"  value={fmt(totalWithdrawn)} color="#f87171" small />
       </div>
       <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155' }}>
-        <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
           <span style={{ fontWeight: 600, fontSize: 15, color: '#f1f5f9' }}>Transaction History</span>
           <span style={{ fontSize: 12, color: '#64748b' }}>Last: {lastTx?.date ?? '—'}</span>
         </div>
@@ -809,14 +858,16 @@ function UserDashboard({ accounts, interestRate, user }: { accounts: Account[]; 
           ? <p style={{ padding: '2rem', textAlign: 'center', color: '#475569', fontSize: 14 }}>No transactions yet.</p>
           : (
             <>
-              <div style={{ padding: '8px 16px', display: 'grid', gridTemplateColumns: '110px 1fr auto auto', gap: 12, fontSize: 11, color: '#475569', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>
-                <span>Date</span><span>Description</span><span>Amount</span><span>Balance</span>
-              </div>
-              {txs.map(tx => <TxRow key={tx.id} tx={tx} />)}
+              {!isMobile && (
+                <div style={{ padding: '8px 16px', display: 'grid', gridTemplateColumns: '110px 1fr auto auto', gap: 12, fontSize: 11, color: '#475569', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>
+                  <span>Date</span><span>Description</span><span>Amount</span><span>Balance</span>
+                </div>
+              )}
+              {txs.map(tx => <TxRow key={tx.id} tx={tx} isMobile={isMobile} />)}
               {account.transactions.length > 5 && (
                 <div style={{ padding: '12px', textAlign: 'center' }}>
                   <button onClick={() => setShowAll(!showAll)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: ORANGE, cursor: 'pointer', fontSize: 13 }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: ORANGE, cursor: 'pointer', fontSize: 13, minHeight: 44 }}>
                     {showAll ? <><ChevronUp size={14} />Show less</> : <><ChevronDown size={14} />Show all {account.transactions.length} transactions</>}
                   </button>
                 </div>

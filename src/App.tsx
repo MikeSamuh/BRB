@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabase';
 import {
-  LogOut, TrendingUp, DollarSign, Users, Settings,
+  LogOut, TrendingUp, Banknote, Users, Settings,
   ChevronDown, ChevronUp, ArrowUpCircle, ArrowDownCircle,
   Percent, Plus, Minus, Eye, EyeOff, RefreshCw, Trash2, UserPlus
 } from 'lucide-react';
@@ -532,7 +532,7 @@ function AdminDashboard({ accounts, profiles, interestRate, user, onRefresh }: {
       {tab === 'accounts' && (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: '2rem' }}>
-            <StatCard icon={<DollarSign size={20} />} label="Total Balance"       value={fmt(totalBalance)}           color="#34d399" />
+            <StatCard icon={<Banknote size={20} />} label="Total Balance"       value={fmt(totalBalance)}           color="#34d399" />
             <StatCard icon={<Users size={20} />}       label="Members"            value={String(localAccounts.length)} color="#60a5fa" />
             <StatCard icon={<TrendingUp size={20} />}  label="Total Transactions" value={String(totalTxs)}            color={ORANGE}  />
           </div>
@@ -597,7 +597,7 @@ function ManagerDashboard({ accounts, interestRate, user, onRefresh }: {
     <div style={{ padding: '2rem', maxWidth: 900, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <DollarSign size={20} /> Manage Accounts
+          <Banknote size={20} /> Manage Accounts
         </h2>
         <button onClick={onRefresh} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #334155', color: '#94a3b8', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 13 }}>
           <RefreshCw size={14} /> Refresh

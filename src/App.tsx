@@ -574,15 +574,27 @@ function AdminDashboard({ accounts, profiles, interestRate, user, onRefresh }: {
 }
 
 // ── Manager Dashboard ─────────────────────────────────────────────────────────
-function ManagerDashboard({ accounts, interestRate, user, onRefresh }: {
-  accounts: Account[]; interestRate: number; user: AppUser; onRefresh: () => void;
+function ManagerDashboard({ accounts, interestRate, monthlyBudget, user, onRefresh }: {
+  accounts: Account[]; interestRate: number; monthlyBudget: number; user: AppUser; onRefresh: () => void;
 }) {
   const [selected, setSelected] = useState<Account | null>(null);
   const [localAccounts, setLocalAccounts] = useState(accounts);
 
   useEffect(() => { setLocalAccounts(accounts); }, [accounts]);
 
+  // Sum of all deposits made this calendar month across all accounts
+  const thisMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+  const spentThisMonth = localAccounts.reduce((sum, acc) =>
+    sum + acc.transactions
+      .filter(t => t.type === 'deposit' && t.date.startsWith(thisMonth))
+      .reduce((s, t) => s + t.amount, 0), 0);
+  const budgetRemaining = monthlyBudget - spentThisMonth;
+
   async function handleTransaction(accountId: string, type: 'deposit' | 'withdrawal', amount: number, note: string) {
+    if (type === 'deposit' && amount > budgetRemaining) {
+      alert(`Over monthly budget. Only ${fmt(budgetRemaining)} remaining this month.`);
+      return;
+    }
     const acc = localAccounts.find(a => a.id === accountId)!;
     const newBalance = type === 'deposit' ? acc.balance + amount : acc.balance - amount;
     const tx = { id: uid(), account_id: accountId, date: today(), type, amount, note, balance: newBalance, performed_by: user.name };
@@ -592,6 +604,9 @@ function ManagerDashboard({ accounts, interestRate, user, onRefresh }: {
     setLocalAccounts(la => la.map(a => a.id === accountId ? updatedAcc : a));
     setSelected(updatedAcc);
   }
+
+  const budgetPct = Math.min(100, (spentThisMonth / monthlyBudget) * 100);
+  const budgetColor = budgetPct > 90 ? '#f87171' : budgetPct > 70 ? '#fbbf24' : '#34d399';
 
   return (
     <div style={{ padding: '2rem', maxWidth: 900, margin: '0 auto' }}>
@@ -603,6 +618,23 @@ function ManagerDashboard({ accounts, interestRate, user, onRefresh }: {
           <RefreshCw size={14} /> Refresh
         </button>
       </div>
+
+      {/* Monthly budget tracker */}
+      <div style={{ background: '#1e293b', borderRadius: 12, padding: '1rem 1.25rem', border: '1px solid #334155', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <span style={{ fontSize: 13, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Banknote size={14} color={budgetColor} /> Monthly Budget
+          </span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: budgetColor }}>
+            {fmt(budgetRemaining)} remaining of {fmt(monthlyBudget)}
+          </span>
+        </div>
+        <div style={{ background: '#0f172a', borderRadius: 999, height: 8, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${budgetPct}%`, background: budgetColor, borderRadius: 999, transition: 'width 0.3s' }} />
+        </div>
+        <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>{fmt(spentThisMonth)} distributed this month</div>
+      </div>
+
       <div style={{ background: '#1e293b', borderRadius: 10, padding: '10px 16px', border: '1px solid #334155', marginBottom: '1.5rem', fontSize: 13, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 8 }}>
         <Percent size={14} color="#fbbf24" /> Interest rate: <strong style={{ color: '#fbbf24' }}>{interestRate}% APR</strong>
       </div>
@@ -787,6 +819,7 @@ export default function App() {
   const [accounts, setAccounts]         = useState<Account[]>([]);
   const [profiles, setProfiles]         = useState<Profile[]>([]);
   const [interestRate, setInterestRate] = useState(4.5);
+  const [monthlyBudget, setMonthlyBudget] = useState(5000);
   const [loading, setLoading]           = useState(true);
 
   useEffect(() => {
@@ -815,6 +848,8 @@ export default function App() {
 
     const rate = settingsRaw?.find(s => s.key === 'interest_rate');
     if (rate) setInterestRate(parseFloat(rate.value));
+    const budget = settingsRaw?.find(s => s.key === 'monthly_budget');
+    if (budget) setMonthlyBudget(parseFloat(budget.value));
 
     if (accsRaw && txsRaw) {
       setAccounts(accsRaw.map(a => ({ ...a, transactions: txsRaw.filter(t => t.account_id === a.id) })));
@@ -849,7 +884,7 @@ export default function App() {
     <div style={{ minHeight: '100vh', background: '#0f172a' }}>
       <Header user={appUser} onLogout={handleLogout} />
       {appUser.role === 'admin'   && <AdminDashboard   accounts={accounts} profiles={profiles} interestRate={interestRate} user={appUser} onRefresh={() => loadData()} />}
-      {appUser.role === 'manager' && <ManagerDashboard accounts={accounts} interestRate={interestRate} user={appUser} onRefresh={() => loadData()} />}
+      {appUser.role === 'manager' && <ManagerDashboard accounts={accounts} interestRate={interestRate} monthlyBudget={monthlyBudget} user={appUser} onRefresh={() => loadData()} />}
       {appUser.role === 'user'    && <UserDashboard    accounts={accounts} interestRate={interestRate} user={appUser} />}
     </div>
   );

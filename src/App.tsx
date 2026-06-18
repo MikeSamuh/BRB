@@ -277,13 +277,13 @@ function AccountModal({ account, role, onClose, onTransaction }: {
   const isMobile = width < 640;
 
   const recomputedTxs = (() => {
-    const byCreated = [...account.transactions].sort((a, b) => a.created_at.localeCompare(b.created_at));
+    const byDate = [...account.transactions].sort((a, b) => a.date.localeCompare(b.date) || a.created_at.localeCompare(b.created_at));
     let running = 0;
-    const withBalance = byCreated.map(tx => {
+    const withBalance = byDate.map(tx => {
       running += tx.type === 'withdrawal' ? -tx.amount : tx.amount;
       return { ...tx, balance: parseFloat(running.toFixed(2)) };
     });
-    return withBalance.sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at));
+    return withBalance.reverse();
   })();
   const txs = showAll ? recomputedTxs : recomputedTxs.slice(0, 5);
 
@@ -766,13 +766,15 @@ function ManagerDashboard({ accounts, interestRate, monthlyBudget, user, onRefre
 
 // ── Balance Chart ─────────────────────────────────────────────────────────────
 function BalanceChart({ transactions, interestRate }: { transactions: Transaction[]; interestRate: number }) {
-  // Sort by created_at to get true chronological insertion order, then recompute running balance
-  const sorted = [...transactions].sort((a, b) => a.created_at.localeCompare(b.created_at));
-  let running = 0;
-  const sortedWithBalance = sorted.map(tx => {
-    running += tx.type === 'withdrawal' ? -tx.amount : tx.amount;
-    return { ...tx, balance: parseFloat(running.toFixed(2)) };
-  });
+  // Sort by date (then created_at as tiebreaker) and recompute running balance
+  const sortedWithBalance = (() => {
+    const byDate = [...transactions].sort((a, b) => a.date.localeCompare(b.date) || a.created_at.localeCompare(b.created_at));
+    let running = 0;
+    return byDate.map(tx => {
+      running += tx.type === 'withdrawal' ? -tx.amount : tx.amount;
+      return { ...tx, balance: parseFloat(running.toFixed(2)) };
+    });
+  })();
   const today = new Date().toISOString().split('T')[0];
 
   // Split into actual and projected series sharing the same x-axis points
@@ -912,13 +914,13 @@ function UserDashboard({ accounts, interestRate, user }: { accounts: Account[]; 
   if (!account) return <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>No account found.</div>;
 
   const recomputedTxs = (() => {
-    const byCreated = [...account.transactions].sort((a, b) => a.created_at.localeCompare(b.created_at));
+    const byDate = [...account.transactions].sort((a, b) => a.date.localeCompare(b.date) || a.created_at.localeCompare(b.created_at));
     let running = 0;
-    const withBalance = byCreated.map(tx => {
+    const withBalance = byDate.map(tx => {
       running += tx.type === 'withdrawal' ? -tx.amount : tx.amount;
       return { ...tx, balance: parseFloat(running.toFixed(2)) };
     });
-    return withBalance.sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at));
+    return withBalance.reverse();
   })();
   const txs = showAll ? recomputedTxs : recomputedTxs.slice(0, 5);
   const lastTx = account.transactions[account.transactions.length - 1];

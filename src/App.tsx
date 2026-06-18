@@ -276,7 +276,16 @@ function AccountModal({ account, role, onClose, onTransaction }: {
   const width = useWindowWidth();
   const isMobile = width < 640;
 
-  const txs = showAll ? [...account.transactions].reverse() : [...account.transactions].reverse().slice(0, 5);
+  const recomputedTxs = (() => {
+    const byCreated = [...account.transactions].sort((a, b) => a.created_at.localeCompare(b.created_at));
+    let running = 0;
+    const withBalance = byCreated.map(tx => {
+      running += tx.type === 'withdrawal' ? -tx.amount : tx.amount;
+      return { ...tx, balance: parseFloat(running.toFixed(2)) };
+    });
+    return withBalance.sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at));
+  })();
+  const txs = showAll ? recomputedTxs : recomputedTxs.slice(0, 5);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -902,7 +911,16 @@ function UserDashboard({ accounts, interestRate, user }: { accounts: Account[]; 
 
   if (!account) return <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>No account found.</div>;
 
-  const txs = showAll ? [...account.transactions].reverse() : [...account.transactions].reverse().slice(0, 5);
+  const recomputedTxs = (() => {
+    const byCreated = [...account.transactions].sort((a, b) => a.created_at.localeCompare(b.created_at));
+    let running = 0;
+    const withBalance = byCreated.map(tx => {
+      running += tx.type === 'withdrawal' ? -tx.amount : tx.amount;
+      return { ...tx, balance: parseFloat(running.toFixed(2)) };
+    });
+    return withBalance.sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at));
+  })();
+  const txs = showAll ? recomputedTxs : recomputedTxs.slice(0, 5);
   const lastTx = account.transactions[account.transactions.length - 1];
   const monthlyInterest = (account.balance * interestRate) / 100 / 12;
   const totalDeposited  = account.transactions.filter(t => t.type === 'deposit').reduce((s, t) => s + t.amount, 0);

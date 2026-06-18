@@ -581,6 +581,10 @@ function AdminDashboard({ accounts, profiles, interestRate, user, onRefresh }: {
 
   return (
     <div style={{ padding: isMobile ? '1rem' : '2rem', maxWidth: 900, margin: '0 auto' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <div style={{ fontSize: isMobile ? 28 : 36, fontWeight: 800, color: '#f1f5f9', letterSpacing: -1 }}>Welcome, {user.name}</div>
+        <div style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 8 }}>
         <div style={{ display: 'flex', gap: 8 }}>
           <button style={tabStyle('accounts')} onClick={() => setTab('accounts')}>Accounts</button>
@@ -674,6 +678,10 @@ function ManagerDashboard({ accounts, interestRate, monthlyBudget, user, onRefre
 
   return (
     <div style={{ padding: isMobile ? '1rem' : '2rem', maxWidth: 900, margin: '0 auto' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <div style={{ fontSize: isMobile ? 28 : 36, fontWeight: 800, color: '#f1f5f9', letterSpacing: -1 }}>Welcome, {user.name}</div>
+        <div style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 8 }}>
         <h2 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Banknote size={20} /> Manage Accounts
@@ -864,6 +872,10 @@ function UserDashboard({ accounts, interestRate, user }: { accounts: Account[]; 
 
   return (
     <div style={{ padding: isMobile ? '1rem' : '2rem', maxWidth: 700, margin: '0 auto' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <div style={{ fontSize: isMobile ? 28 : 36, fontWeight: 800, color: '#f1f5f9', letterSpacing: -1 }}>Welcome, {user.name}</div>
+        <div style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+      </div>
       <div style={{ background: `linear-gradient(135deg,${ORANGE_DARK},#7c2d12)`, borderRadius: 16, padding: isMobile ? '1.25rem' : '2rem', marginBottom: '1.5rem', border: '1px solid #334155', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', right: -20, top: -20, width: 120, height: 120, background: 'rgba(255,255,255,0.06)', borderRadius: '50%' }} />
         <div style={{ position: 'absolute', right: 20, bottom: -40, width: 160, height: 160, background: 'rgba(255,255,255,0.04)', borderRadius: '50%' }} />

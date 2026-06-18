@@ -588,7 +588,7 @@ function AdminDashboard({ accounts, profiles, interestRate, monthlyAllowance, us
   async function handleTransaction(accountId: string, type: 'deposit' | 'withdrawal', amount: number, note: string) {
     const acc = localAccounts.find(a => a.id === accountId)!;
     const newBalance = type === 'deposit' ? acc.balance + amount : acc.balance - amount;
-    const tx = { id: uid(), account_id: accountId, date: today(), type, amount, note, balance: newBalance, performed_by: user.name };
+    const tx = { id: uid(), account_id: accountId, date: today(), created_at: new Date().toISOString(), type, amount, note, balance: newBalance, performed_by: user.name };
     await supabase.from('transactions').insert(tx);
     await supabase.from('accounts').update({ balance: newBalance }).eq('id', accountId);
     const updatedAcc = { ...acc, balance: newBalance, transactions: [...acc.transactions, tx] };
@@ -706,7 +706,7 @@ function ManagerDashboard({ accounts, interestRate, monthlyBudget, user, onRefre
     }
     const acc = localAccounts.find(a => a.id === accountId)!;
     const newBalance = type === 'deposit' ? acc.balance + amount : acc.balance - amount;
-    const tx = { id: uid(), account_id: accountId, date: today(), type, amount, note, balance: newBalance, performed_by: user.name };
+    const tx = { id: uid(), account_id: accountId, date: today(), created_at: new Date().toISOString(), type, amount, note, balance: newBalance, performed_by: user.name };
     await supabase.from('transactions').insert(tx);
     await supabase.from('accounts').update({ balance: newBalance }).eq('id', accountId);
     const updatedAcc = { ...acc, balance: newBalance, transactions: [...acc.transactions, tx] };
@@ -1053,7 +1053,7 @@ export default function App() {
         if (!alreadyPaid && allowance > 0) {
           const accRecord = updatedAccs.find(a => a.id === acc.id)!;
           const newBalance = accRecord.balance + allowance;
-          const tx = { id: uid(), account_id: acc.id, date: today(), type: 'deposit' as const, amount: allowance, note: allowanceNote, balance: newBalance, performed_by: 'System' };
+          const tx = { id: uid(), account_id: acc.id, date: today(), created_at: new Date().toISOString(), type: 'deposit' as const, amount: allowance, note: allowanceNote, balance: newBalance, performed_by: 'System' };
           await supabase.from('transactions').insert(tx);
           await supabase.from('accounts').update({ balance: newBalance }).eq('id', acc.id);
           accRecord.balance = newBalance;

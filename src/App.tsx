@@ -37,6 +37,7 @@ interface Transaction {
   id: string;
   account_id: string;
   date: string;
+  created_at: string;
   type: 'deposit' | 'withdrawal' | 'interest';
   amount: number;
   note: string;
@@ -756,19 +757,25 @@ function ManagerDashboard({ accounts, interestRate, monthlyBudget, user, onRefre
 
 // ── Balance Chart ─────────────────────────────────────────────────────────────
 function BalanceChart({ transactions, interestRate }: { transactions: Transaction[]; interestRate: number }) {
-  const sorted = [...transactions].sort((a, b) => a.date.localeCompare(b.date));
+  // Sort by created_at to get true chronological insertion order, then recompute running balance
+  const sorted = [...transactions].sort((a, b) => a.created_at.localeCompare(b.created_at));
+  let running = 0;
+  const sortedWithBalance = sorted.map(tx => {
+    running += tx.type === 'withdrawal' ? -tx.amount : tx.amount;
+    return { ...tx, balance: parseFloat(running.toFixed(2)) };
+  });
   const today = new Date().toISOString().split('T')[0];
 
   // Split into actual and projected series sharing the same x-axis points
   const actual: { date: string; actual: number | null; projected: number | null; type?: string }[] = [];
-  sorted.forEach(tx => {
+  sortedWithBalance.forEach(tx => {
     actual.push({ date: tx.date, actual: tx.balance, projected: null, type: tx.type });
   });
 
   // Bridge point — last actual also starts the projected line
-  if (sorted.length > 0) {
-    const lastBalance = sorted[sorted.length - 1].balance;
-    const lastDate = sorted[sorted.length - 1].date;
+  if (sortedWithBalance.length > 0) {
+    const lastBalance = sortedWithBalance[sortedWithBalance.length - 1].balance;
+    const lastDate = sortedWithBalance[sortedWithBalance.length - 1].date;
     const monthlyRate = interestRate / 100 / 12;
     // Update last actual point to also carry projected value (bridge)
     actual[actual.length - 1].projected = lastBalance;

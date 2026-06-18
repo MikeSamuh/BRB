@@ -168,6 +168,7 @@ function Header({ user, onLogout }: { user: AppUser; onLogout: () => void }) {
       <BRBWordmark />
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12, flexWrap: 'wrap' }}>
         {!isMobile && <span style={{ fontSize: 14, color: '#cbd5e1' }}>{user.name}</span>}
+        {isMobile && <span style={{ fontSize: 13, fontWeight: 600, color: '#f1f5f9' }}>{user.name}</span>}
         <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: badge.bg, color: 'white', fontWeight: 600 }}>{badge.text}</span>
         <button onClick={onLogout} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #334155', color: '#94a3b8', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 13, minHeight: 44 }}>
           <LogOut size={14} />{!isMobile && ' Sign out'}
@@ -716,45 +717,54 @@ function ManagerDashboard({ accounts, interestRate, monthlyBudget, user, onRefre
 
 // ── Balance Chart ─────────────────────────────────────────────────────────────
 function BalanceChart({ transactions, interestRate }: { transactions: Transaction[]; interestRate: number }) {
-  // Build chart data from transaction history + projected monthly compound interest
-  const points: { date: string; balance: number; type?: string }[] = [];
-
-  // Historical points from actual transactions
   const sorted = [...transactions].sort((a, b) => a.date.localeCompare(b.date));
+  const today = new Date().toISOString().split('T')[0];
+
+  // Split into actual and projected series sharing the same x-axis points
+  const actual: { date: string; actual: number | null; projected: number | null; type?: string }[] = [];
   sorted.forEach(tx => {
-    points.push({ date: tx.date, balance: tx.balance, type: tx.type });
+    actual.push({ date: tx.date, actual: tx.balance, projected: null, type: tx.type });
   });
 
-  // Project 6 months of compound interest from current balance
+  // Bridge point — last actual also starts the projected line
   if (sorted.length > 0) {
     const lastBalance = sorted[sorted.length - 1].balance;
+    const lastDate = sorted[sorted.length - 1].date;
     const monthlyRate = interestRate / 100 / 12;
-    const lastDate = new Date(sorted[sorted.length - 1].date);
+    // Update last actual point to also carry projected value (bridge)
+    actual[actual.length - 1].projected = lastBalance;
     for (let i = 1; i <= 6; i++) {
-      const d = new Date(lastDate);
+      const d = new Date(lastDate + 'T00:00:00');
       d.setMonth(d.getMonth() + i);
       const projected = lastBalance * Math.pow(1 + monthlyRate, i);
-      points.push({ date: d.toISOString().split('T')[0], balance: parseFloat(projected.toFixed(2)), type: 'projected' });
+      actual.push({ date: d.toISOString().split('T')[0], actual: null, projected: parseFloat(projected.toFixed(2)) });
     }
   }
 
-  const today = new Date().toISOString().split('T')[0];
-  const minBal = Math.min(...points.map(p => p.balance)) * 0.95;
-  const maxBal = Math.max(...points.map(p => p.balance)) * 1.05;
+  const allVals = actual.flatMap(p => [p.actual, p.projected]).filter((v): v is number => v !== null);
+  const minBal = Math.min(...allVals) * 0.95;
+  const maxBal = Math.max(...allVals) * 1.05;
+
+  // Find the last actual point for the "current balance" marker
+  const lastActual = [...actual].reverse().find(p => p.actual !== null);
 
   interface TooltipPayload {
-    payload: { date: string; balance: number; type?: string };
+    payload: { date: string; actual?: number | null; projected?: number | null; type?: string };
     value: number;
+    dataKey: string;
   }
 
   const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: TooltipPayload[] }) => {
     if (!active || !payload?.length) return null;
     const d = payload[0].payload;
-    const isProjected = d.type === 'projected';
+    const val = d.actual ?? d.projected;
+    const isProjected = d.actual === null || d.actual === undefined;
+    if (!val) return null;
+    const label = (() => { const dt = new Date(d.date + 'T00:00:00'); return dt.toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }); })();
     return (
       <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, padding: '10px 14px', fontSize: 13 }}>
-        <div style={{ color: '#94a3b8', marginBottom: 4 }}>{(() => { const dt = new Date(d.date + 'T00:00:00'); return dt.toLocaleString('en-US', { month: 'long', year: 'numeric', day: 'numeric' }); })()}{isProjected ? ' (projected)' : ''}</div>
-        <div style={{ color: isProjected ? '#fbbf24' : '#34d399', fontWeight: 700, fontSize: 16 }}>{fmt(d.balance)}</div>
+        <div style={{ color: '#94a3b8', marginBottom: 4 }}>{label}{isProjected ? ' (projected)' : ''}</div>
+        <div style={{ color: isProjected ? '#a78bfa' : '#34d399', fontWeight: 700, fontSize: 16 }}>{fmt(val)}</div>
         {d.type && !isProjected && (
           <div style={{ color: '#475569', fontSize: 11, marginTop: 2, textTransform: 'capitalize' }}>{d.type}</div>
         )}
@@ -762,46 +772,73 @@ function BalanceChart({ transactions, interestRate }: { transactions: Transactio
     );
   };
 
+  const fmtTick = (d: string) => { const dt = new Date(d + 'T00:00:00'); return dt.toLocaleString('en-US', { month: 'short' }) + " '" + String(dt.getFullYear()).slice(2); };
+
   return (
     <div style={{ background: '#1e293b', borderRadius: 16, padding: '1.5rem', marginBottom: '1.5rem', border: '1px solid #334155' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
         <span style={{ fontWeight: 600, fontSize: 15, color: '#f1f5f9' }}>Balance History</span>
-        <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#64748b' }}>
-          <span><span style={{ color: '#34d399' }}>●</span> Actual</span>
-          <span><span style={{ color: '#fbbf24' }}>●</span> Projected</span>
+        <div style={{ display: 'flex', gap: 16, fontSize: 12 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ display: 'inline-block', width: 24, height: 3, background: '#34d399', borderRadius: 2 }} /> Actual
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ display: 'inline-block', width: 24, height: 3, background: '#a78bfa', borderRadius: 2, borderTop: '2px dashed #a78bfa', boxSizing: 'border-box' }} /> Projected
+          </span>
         </div>
       </div>
-      <ResponsiveContainer width="100%" height={200}>
-        <AreaChart data={points} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+      <ResponsiveContainer width="100%" height={220}>
+        <AreaChart data={actual} margin={{ top: 16, right: 8, left: 0, bottom: 0 }}>
           <defs>
-            <linearGradient id="balGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor={ORANGE} stopOpacity={0.3} />
-              <stop offset="95%" stopColor={ORANGE} stopOpacity={0}   />
+            <linearGradient id="actualGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%"  stopColor="#34d399" stopOpacity={0.25} />
+              <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="projGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%"  stopColor="#a78bfa" stopOpacity={0.2} />
+              <stop offset="95%" stopColor="#a78bfa" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.4} />
           <XAxis dataKey="date" tick={{ fill: '#475569', fontSize: 11 }} tickLine={false} axisLine={false}
-            tickFormatter={d => { const dt = new Date(d + 'T00:00:00'); return dt.toLocaleString('en-US', { month: 'short' }) + " '" + String(dt.getFullYear()).slice(2); }}
-            interval="preserveStartEnd" />
+            tickFormatter={fmtTick} interval="preserveStartEnd" />
           <YAxis tick={{ fill: '#475569', fontSize: 11 }} tickLine={false} axisLine={false}
             domain={[minBal, maxBal]} tickFormatter={v => '£' + (v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v)} width={55} />
           <Tooltip content={<CustomTooltip />} />
-          <ReferenceLine x={today} stroke="#e2e8f0" strokeWidth={2} strokeDasharray="4 3"
-            label={{ value: 'Today', fill: '#e2e8f0', fontSize: 11, fontWeight: 600, position: 'top' }} />
-          <Area type="monotone" dataKey="balance" stroke={ORANGE} strokeWidth={2}
-            fill="url(#balGrad)"
+          <ReferenceLine x={today} stroke="#f1f5f9" strokeWidth={1.5} strokeDasharray="4 3"
+            label={{ value: 'Today', fill: '#94a3b8', fontSize: 10, fontWeight: 600, position: 'insideTopRight' }} />
+          {/* Actual line — green */}
+          <Area type="monotone" dataKey="actual" stroke="#34d399" strokeWidth={2.5}
+            fill="url(#actualGrad)" connectNulls={false}
             dot={(props) => {
-              const { cx = 0, cy = 0, payload } = props as { cx?: number; cy?: number; payload: { type?: string } };
-              if (payload.type === 'projected') return <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={3} fill="#fbbf24" stroke="none" />;
+              const { cx = 0, cy = 0, payload } = props as { cx?: number; cy?: number; payload: { type?: string; date?: string; actual?: number | null } };
+              if (payload.actual === null || payload.actual === undefined) return <g key={`${cx}-${cy}`} />;
+              const isToday = payload.date === today;
+              if (isToday) return <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={6} fill="#34d399" stroke="#1e293b" strokeWidth={2} />;
               if (payload.type === 'deposit')    return <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={4} fill="#34d399" stroke="#1e293b" strokeWidth={2} />;
               if (payload.type === 'withdrawal') return <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={4} fill="#f87171" stroke="#1e293b" strokeWidth={2} />;
               if (payload.type === 'interest')   return <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={3} fill="#60a5fa" stroke="none" />;
-              return <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={3} fill={ORANGE} stroke="none" />;
+              return <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={3} fill="#34d399" stroke="none" />;
             }}
           />
+          {/* Projected line — purple dashed */}
+          <Area type="monotone" dataKey="projected" stroke="#a78bfa" strokeWidth={2} strokeDasharray="6 3"
+            fill="url(#projGrad)" connectNulls={false}
+            dot={(props) => {
+              const { cx = 0, cy = 0, payload } = props as { cx?: number; cy?: number; payload: { projected?: number | null } };
+              if (payload.projected === null || payload.projected === undefined) return <g key={`${cx}-${cy}`} />;
+              return <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={3} fill="#a78bfa" stroke="none" />;
+            }}
+          />
+          {/* Current balance label */}
+          {lastActual && (
+            <ReferenceLine y={lastActual.actual!}
+              stroke="#34d399" strokeDasharray="3 3" strokeWidth={1} opacity={0.4}
+              label={{ value: `Current: ${fmt(lastActual.actual!)}`, fill: '#34d399', fontSize: 10, position: 'insideTopLeft' }} />
+          )}
         </AreaChart>
       </ResponsiveContainer>
-      <div style={{ display: 'flex', gap: 20, marginTop: 12, fontSize: 11, color: '#475569' }}>
+      <div style={{ display: 'flex', gap: 20, marginTop: 8, fontSize: 11, color: '#475569' }}>
         <span><span style={{ color: '#34d399' }}>●</span> Deposit</span>
         <span><span style={{ color: '#f87171' }}>●</span> Withdrawal</span>
         <span><span style={{ color: '#60a5fa' }}>●</span> Interest</span>

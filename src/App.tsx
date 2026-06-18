@@ -538,13 +538,15 @@ function UserManagement({ profiles, onRefresh }: { profiles: Profile[]; onRefres
 // ── Admin Dashboard ───────────────────────────────────────────────────────────
 type AdminTab = 'accounts' | 'users';
 
-function AdminDashboard({ accounts, profiles, interestRate, user, onRefresh }: {
-  accounts: Account[]; profiles: Profile[]; interestRate: number; user: AppUser; onRefresh: () => void;
+function AdminDashboard({ accounts, profiles, interestRate, monthlyAllowance, user, onRefresh }: {
+  accounts: Account[]; profiles: Profile[]; interestRate: number; monthlyAllowance: number; user: AppUser; onRefresh: () => void;
 }) {
   const [tab, setTab]           = useState<AdminTab>('accounts');
   const [selected, setSelected] = useState<Account | null>(null);
   const [rateInput, setRateInput] = useState(String(interestRate));
   const [rateSaved, setRateSaved] = useState(false);
+  const [allowanceInput, setAllowanceInput] = useState(String(monthlyAllowance));
+  const [allowanceSaved, setAllowanceSaved] = useState(false);
   const [localAccounts, setLocalAccounts] = useState(accounts);
   const width = useWindowWidth();
   const isMobile = width < 640;
@@ -557,6 +559,15 @@ function AdminDashboard({ accounts, profiles, interestRate, user, onRefresh }: {
     await supabase.from('settings').update({ value: String(r) }).eq('key', 'interest_rate');
     setRateSaved(true);
     setTimeout(() => setRateSaved(false), 2000);
+    onRefresh();
+  }
+
+  async function saveAllowance() {
+    const a = parseFloat(allowanceInput);
+    if (isNaN(a) || a < 0) return;
+    await supabase.from('settings').upsert({ key: 'monthly_allowance', value: String(a) });
+    setAllowanceSaved(true);
+    setTimeout(() => setAllowanceSaved(false), 2000);
     onRefresh();
   }
 
@@ -603,18 +614,34 @@ function AdminDashboard({ accounts, profiles, interestRate, user, onRefresh }: {
             <StatCard icon={<TrendingUp size={20} />}  label="Total Transactions" value={String(totalTxs)}            color={ORANGE}  />
           </div>
 
-          <div style={{ background: '#1e293b', borderRadius: 12, padding: '1.25rem', border: '1px solid #334155', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <Percent size={16} color="#fbbf24" />
-              <span style={{ fontWeight: 600, fontSize: 15, color: '#f1f5f9' }}>Annual Interest Rate</span>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: '1.5rem' }}>
+            <div style={{ background: '#1e293b', borderRadius: 12, padding: '1.25rem', border: '1px solid #334155' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <Percent size={16} color="#fbbf24" />
+                <span style={{ fontWeight: 600, fontSize: 15, color: '#f1f5f9' }}>Annual Interest Rate</span>
+              </div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' as const }}>
+                <input value={rateInput} onChange={e => { setRateInput(e.target.value); setRateSaved(false); }}
+                  type="number" min="0" max="100" step="0.1" style={{ ...inputStyle, width: 100 }} />
+                <span style={{ color: '#94a3b8' }}>%</span>
+                <button onClick={saveRate} style={{ ...primaryBtn, padding: '8px 20px', width: 'auto' }}>Save</button>
+                {rateSaved && <span style={{ color: '#34d399', fontSize: 13 }}>✓ Saved</span>}
+              </div>
+              <div style={{ color: '#64748b', fontSize: 12, marginTop: 8 }}>Current: <strong style={{ color: '#fbbf24' }}>{interestRate}%</strong></div>
             </div>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' as const }}>
-              <input value={rateInput} onChange={e => { setRateInput(e.target.value); setRateSaved(false); }}
-                type="number" min="0" max="100" step="0.1" style={{ ...inputStyle, width: 100 }} />
-              <span style={{ color: '#94a3b8' }}>%</span>
-              <button onClick={saveRate} style={{ ...primaryBtn, padding: '8px 20px', width: 'auto' }}>Save</button>
-              {rateSaved && <span style={{ color: '#34d399', fontSize: 13 }}>✓ Saved</span>}
-              <span style={{ color: '#64748b', fontSize: 13 }}>Current: <strong style={{ color: '#fbbf24' }}>{interestRate}%</strong></span>
+            <div style={{ background: '#1e293b', borderRadius: 12, padding: '1.25rem', border: '1px solid #334155' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <Banknote size={16} color="#34d399" />
+                <span style={{ fontWeight: 600, fontSize: 15, color: '#f1f5f9' }}>Monthly Allowance</span>
+              </div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' as const }}>
+                <span style={{ color: '#94a3b8' }}>£</span>
+                <input value={allowanceInput} onChange={e => { setAllowanceInput(e.target.value); setAllowanceSaved(false); }}
+                  type="number" min="0" step="1" style={{ ...inputStyle, width: 100 }} />
+                <button onClick={saveAllowance} style={{ ...primaryBtn, padding: '8px 20px', width: 'auto' }}>Save</button>
+                {allowanceSaved && <span style={{ color: '#34d399', fontSize: 13 }}>✓ Saved</span>}
+              </div>
+              <div style={{ color: '#64748b', fontSize: 12, marginTop: 8 }}>Auto-credited on 1st of each month · Current: <strong style={{ color: '#34d399' }}>£{monthlyAllowance}</strong></div>
             </div>
           </div>
 
@@ -931,12 +958,13 @@ function UserDashboard({ accounts, interestRate, user }: { accounts: Account[]; 
 
 // ── Root ──────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [appUser, setAppUser]           = useState<AppUser | null>(null);
-  const [accounts, setAccounts]         = useState<Account[]>([]);
-  const [profiles, setProfiles]         = useState<Profile[]>([]);
-  const [interestRate, setInterestRate] = useState(4.5);
+  const [appUser, setAppUser]             = useState<AppUser | null>(null);
+  const [accounts, setAccounts]           = useState<Account[]>([]);
+  const [profiles, setProfiles]           = useState<Profile[]>([]);
+  const [interestRate, setInterestRate]   = useState(4.5);
   const [monthlyBudget, setMonthlyBudget] = useState(5000);
-  const [loading, setLoading]           = useState(true);
+  const [monthlyAllowance, setMonthlyAllowance] = useState(500);
+  const [loading, setLoading]             = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -966,6 +994,9 @@ export default function App() {
     if (rate) setInterestRate(parseFloat(rate.value));
     const budget = settingsRaw?.find(s => s.key === 'monthly_budget');
     if (budget) setMonthlyBudget(parseFloat(budget.value));
+    const allowanceSetting = settingsRaw?.find(s => s.key === 'monthly_allowance');
+    const allowance = allowanceSetting ? parseFloat(allowanceSetting.value) : 500;
+    setMonthlyAllowance(allowance);
 
     if (accsRaw && txsRaw) {
       let visibleAccounts = accsRaw;
@@ -977,7 +1008,32 @@ export default function App() {
         const assignedIds = new Set((assignedProfiles ?? []).map(p => p.account_id).filter(Boolean));
         visibleAccounts = accsRaw.filter(a => assignedIds.has(a.id));
       }
-      setAccounts(visibleAccounts.map(a => ({ ...a, transactions: txsRaw.filter(t => t.account_id === a.id) })));
+
+      // Auto-apply monthly allowance for any account that hasn't received it this month
+      const thisMonth = new Date().toISOString().slice(0, 7);
+      const allowanceNote = 'Monthly allowance';
+      const newTxs: typeof txsRaw = [];
+      const updatedAccs = [...accsRaw];
+
+      for (const acc of visibleAccounts) {
+        const accTxs = txsRaw.filter(t => t.account_id === acc.id);
+        const alreadyPaid = accTxs.some(t => t.date.startsWith(thisMonth) && t.note === allowanceNote);
+        if (!alreadyPaid && allowance > 0) {
+          const accRecord = updatedAccs.find(a => a.id === acc.id)!;
+          const newBalance = accRecord.balance + allowance;
+          const tx = { id: uid(), account_id: acc.id, date: today(), type: 'deposit' as const, amount: allowance, note: allowanceNote, balance: newBalance, performed_by: 'System' };
+          await supabase.from('transactions').insert(tx);
+          await supabase.from('accounts').update({ balance: newBalance }).eq('id', acc.id);
+          accRecord.balance = newBalance;
+          newTxs.push(tx);
+        }
+      }
+
+      const allTxs = [...txsRaw, ...newTxs];
+      setAccounts(visibleAccounts.map(a => {
+        const updated = updatedAccs.find(u => u.id === a.id)!;
+        return { ...updated, transactions: allTxs.filter(t => t.account_id === a.id) };
+      }));
     }
 
     if (effectiveRole === 'admin') {
@@ -1008,7 +1064,7 @@ export default function App() {
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a' }}>
       <Header user={appUser} onLogout={handleLogout} />
-      {appUser.role === 'admin'   && <AdminDashboard   accounts={accounts} profiles={profiles} interestRate={interestRate} user={appUser} onRefresh={() => loadData()} />}
+      {appUser.role === 'admin'   && <AdminDashboard   accounts={accounts} profiles={profiles} interestRate={interestRate} monthlyAllowance={monthlyAllowance} user={appUser} onRefresh={() => loadData()} />}
       {appUser.role === 'manager' && <ManagerDashboard accounts={accounts} interestRate={interestRate} monthlyBudget={monthlyBudget} user={appUser} onRefresh={() => loadData()} />}
       {appUser.role === 'user'    && <UserDashboard    accounts={accounts} interestRate={interestRate} user={appUser} />}
     </div>

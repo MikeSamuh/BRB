@@ -291,6 +291,7 @@ function AccountModal({ account, role, onClose, onTransaction }: {
     e.preventDefault();
     const val = parseFloat(amount);
     if (!val || val <= 0) { setErr('Enter a valid amount.'); return; }
+    if (type === 'withdrawal' && val % 100 !== 0) { setErr('Withdrawals must be a multiple of £100.'); return; }
     if (type === 'withdrawal' && val > account.balance) { setErr('Insufficient funds.'); return; }
     if (!note.trim()) { setErr('Enter a note.'); return; }
     setSaving(true);

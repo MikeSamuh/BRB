@@ -191,6 +191,10 @@ function StatCard({ icon, label, value, color, small }: { icon: React.ReactNode;
 }
 
 // ── Transaction Row ───────────────────────────────────────────────────────────
+function fmtDate(d: string) {
+  return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 function TxRow({ tx, isMobile }: { tx: Transaction; isMobile?: boolean }) {
   const isIn = tx.type !== 'withdrawal';
   if (isMobile) {
@@ -205,7 +209,7 @@ function TxRow({ tx, isMobile }: { tx: Transaction; isMobile?: boolean }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 12, color: '#475569' }}>
             {tx.type === 'interest' ? '🔄 Interest' : tx.type === 'deposit' ? '⬆ Deposit' : '⬇ Withdrawal'}
-            {' · '}{tx.date}
+            {' · '}{fmtDate(tx.date)}
           </span>
           <span style={{ fontSize: 12, color: '#94a3b8' }}>{fmt(tx.balance)}</span>
         </div>
@@ -213,8 +217,8 @@ function TxRow({ tx, isMobile }: { tx: Transaction; isMobile?: boolean }) {
     );
   }
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr auto auto', gap: 12, alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #1e293b' }}>
-      <span style={{ fontSize: 13, color: '#64748b' }}>{tx.date}</span>
+    <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr auto auto', gap: 12, alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #1e293b' }}>
+      <span style={{ fontSize: 13, color: '#64748b' }}>{fmtDate(tx.date)}</span>
       <div>
         <div style={{ fontSize: 14, color: '#e2e8f0' }}>{tx.note}</div>
         <div style={{ fontSize: 12, color: '#475569', marginTop: 2 }}>
@@ -681,7 +685,7 @@ function ManagerDashboard({ accounts, interestRate, monthlyBudget, user, onRefre
   const thisMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
   const spentThisMonth = localAccounts.reduce((sum, acc) =>
     sum + acc.transactions
-      .filter(t => t.type === 'deposit' && t.date.startsWith(thisMonth))
+      .filter(t => t.type === 'deposit' && t.date.startsWith(thisMonth) && t.performed_by !== 'System')
       .reduce((s, t) => s + t.amount, 0), 0);
   const budgetRemaining = monthlyBudget - spentThisMonth;
 
@@ -1012,12 +1016,13 @@ export default function App() {
       // Auto-apply monthly allowance for any account that hasn't received it this month
       const thisMonth = new Date().toISOString().slice(0, 7);
       const allowanceNote = 'Monthly allowance';
+      // Only auto-credit if no System-issued allowance exists this month
       const newTxs: typeof txsRaw = [];
       const updatedAccs = [...accsRaw];
 
       for (const acc of visibleAccounts) {
         const accTxs = txsRaw.filter(t => t.account_id === acc.id);
-        const alreadyPaid = accTxs.some(t => t.date.startsWith(thisMonth) && t.note === allowanceNote);
+        const alreadyPaid = accTxs.some(t => t.date.startsWith(thisMonth) && t.note === allowanceNote && t.performed_by === 'System');
         if (!alreadyPaid && allowance > 0) {
           const accRecord = updatedAccs.find(a => a.id === acc.id)!;
           const newBalance = accRecord.balance + allowance;

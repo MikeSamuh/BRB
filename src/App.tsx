@@ -765,7 +765,14 @@ function ManagerDashboard({ accounts, interestRate, monthlyBudget, user, onRefre
 }
 
 // ── Balance Chart ─────────────────────────────────────────────────────────────
+const TIMESCALES = ['1Y', '5Y', '10Y', '50Y'] as const;
+type Timescale = typeof TIMESCALES[number];
+const timescaleMonths: Record<Timescale, number> = { '1Y': 12, '5Y': 60, '10Y': 120, '50Y': 600 };
+
 function BalanceChart({ transactions, interestRate }: { transactions: Transaction[]; interestRate: number }) {
+  const [timescale, setTimescale] = useState<Timescale>('1Y');
+  const projMonths = timescaleMonths[timescale];
+
   // Sort by date (then created_at as tiebreaker) and recompute running balance
   const sortedWithBalance = (() => {
     const byDate = [...transactions].sort((a, b) => a.date.localeCompare(b.date) || a.created_at.localeCompare(b.created_at));
@@ -788,9 +795,10 @@ function BalanceChart({ transactions, interestRate }: { transactions: Transactio
     const lastBalance = sortedWithBalance[sortedWithBalance.length - 1].balance;
     const lastDate = sortedWithBalance[sortedWithBalance.length - 1].date;
     const monthlyRate = interestRate / 100 / 12;
-    // Update last actual point to also carry projected value (bridge)
     actual[actual.length - 1].projected = lastBalance;
-    for (let i = 1; i <= 6; i++) {
+    // Spread projected points: monthly for ≤12, quarterly for ≤60, yearly beyond
+    const step = projMonths <= 12 ? 1 : projMonths <= 60 ? 3 : projMonths <= 120 ? 6 : 12;
+    for (let i = step; i <= projMonths; i += step) {
       const d = new Date(lastDate + 'T00:00:00');
       d.setMonth(d.getMonth() + i);
       const projected = lastBalance * Math.pow(1 + monthlyRate, i);
@@ -829,19 +837,35 @@ function BalanceChart({ transactions, interestRate }: { transactions: Transactio
     );
   };
 
-  const fmtTick = (d: string) => { const dt = new Date(d + 'T00:00:00'); return dt.toLocaleString('en-US', { month: 'short' }) + " '" + String(dt.getFullYear()).slice(2); };
+  const fmtTick = (d: string) => {
+    const dt = new Date(d + 'T00:00:00');
+    if (projMonths > 60) return String(dt.getFullYear());
+    return dt.toLocaleString('en-US', { month: 'short' }) + " '" + String(dt.getFullYear()).slice(2);
+  };
 
   return (
     <div style={{ background: '#1e293b', borderRadius: 16, padding: '1.5rem', marginBottom: '1.5rem', border: '1px solid #334155' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
         <span style={{ fontWeight: 600, fontSize: 15, color: '#f1f5f9' }}>Balance History</span>
-        <div style={{ display: 'flex', gap: 16, fontSize: 12 }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ display: 'inline-block', width: 24, height: 3, background: '#34d399', borderRadius: 2 }} /> Actual
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ display: 'inline-block', width: 24, height: 3, background: '#a78bfa', borderRadius: 2, borderTop: '2px dashed #a78bfa', boxSizing: 'border-box' }} /> Projected
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 16, fontSize: 12 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ display: 'inline-block', width: 24, height: 3, background: '#34d399', borderRadius: 2 }} /> Actual
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ display: 'inline-block', width: 24, height: 3, background: '#a78bfa', borderRadius: 2, borderTop: '2px dashed #a78bfa', boxSizing: 'border-box' }} /> Projected
+            </span>
+          </div>
+          <div style={{ display: 'flex', background: '#0f172a', borderRadius: 8, padding: 2, gap: 2 }}>
+            {TIMESCALES.map(ts => (
+              <button key={ts} onClick={() => setTimescale(ts)} style={{
+                background: timescale === ts ? ORANGE : 'none',
+                color: timescale === ts ? 'white' : '#64748b',
+                border: 'none', borderRadius: 6, padding: '4px 10px',
+                fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
+              }}>{ts}</button>
+            ))}
+          </div>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={220}>
